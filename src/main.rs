@@ -8,9 +8,19 @@ mod ray;
 pub use image::Rgb;
 pub use ray::Ray;
 
-fn get_background(this_ray: Ray) -> Vec3 {
-    let unit_dir = this_ray.dir().unit();
-    let t: f64 = (unit_dir.y() + 1.0) / 2.0;
+fn hit_sphere(center : Vec3, radius : f64, this_ray : & Ray) -> bool {
+    let a = this_ray.dir * this_ray.dir;
+    let b = (this_ray.ori - center) * (this_ray.dir) * 2.0;
+    let c = (this_ray.ori - center) * (this_ray.ori - center) - radius * radius;
+    if b * b - 4.0 * a * c >= 0.0 {true}
+    else {false}
+}
+
+fn get_color(this_ray: & Ray) -> Vec3 {
+    if hit_sphere(Vec3 :: new(0.0, 0.0, 1.0), 0.5, this_ray)
+        {return Vec3 :: new(1.0, 0.0, 0.0);}
+    let unit_dir = this_ray.dir.unit();
+    let t: f64 = (unit_dir.y + 1.0) / 2.0;
     (Vec3::new(1.0, 1.0, 1.0) * t) + (Vec3::new(0.5, 0.7, 1.0) * (1.0 - t))
 }
 
@@ -32,7 +42,7 @@ fn main() {
     let horizontal = Vec3::new(viewport_width as f64, 0.0, 0.0);
     let vertical = Vec3::new(0.0, viewport_height as f64, 0.0);
     let upper_left_corner =
-        origin - (horizontal / 2.0) + (vertical / 2.0) + Vec3::new(0.0, 0.0, focal_length as f64);
+        origin - (horizontal / 2.0) - (vertical / 2.0) + Vec3::new(0.0, 0.0, focal_length as f64);
 
     for x in 0..image_width {
         for y in 0..image_height {
@@ -43,11 +53,11 @@ fn main() {
                 origin,
                 upper_left_corner + horizontal * dx + vertical * dy - origin,
             );
-            let background = get_background(this_ray);
+            let color = get_color(&this_ray);
             *pixel = Rgb([
-                (background.x() * 255.0) as u8,
-                (background.y() * 255.0) as u8,
-                (background.z() * 255.0) as u8,
+                (color.x * 255.0) as u8,
+                (color.y * 255.0) as u8,
+                (color.z * 255.0) as u8,
             ]);
         }
         bar.inc(1);
