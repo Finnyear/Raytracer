@@ -4,36 +4,51 @@ use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 // use std;
 pub use vec3::Vec3;
+mod ray;
+pub use image::Rgb;
+pub use ray::Ray;
 
-mod point;
-pub use point::Point;
-mod clock;
-pub use clock::Clock;
+fn get_background(this_ray: Ray) -> Vec3 {
+    let unit_dir = this_ray.dir().unit();
+    let t: f64 = (unit_dir.y() + 1.0) / 2.0;
+    (Vec3::new(1.0, 1.0, 1.0) * t) + (Vec3::new(0.5, 0.7, 1.0) * (1.0 - t))
+}
 
 fn main() {
     let x = Vec3::new(1.0, 1.0, 1.0);
     println!("{:?}", x);
 
-    let mut img: RgbImage = ImageBuffer::new(1024, 512);
-    let bar = ProgressBar::new(1024);
-    // let mut a: [[i32; 512]; 1024] = [[0; 512]; 1024];
-    // a[0][0] = 0;
-    // draw_clock(&mut a);
-    let mut clo = Clock :: new();
-    clo.draw_clock_plate();
-    clo.draw_clock_needle(19, 15, 0);
-    for x in 0..1024 {
-        for y in 0..512 {
+    let aspect_ratio: f64 = 2.0 / 1.0;
+    let image_height = 512;
+    let image_width = ((image_height as f64) * aspect_ratio) as u32;
+    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
+    let bar = ProgressBar::new(image_width as u64);
+
+    let viewport_height = 2;
+    let viewport_width = ((viewport_height as f64) * aspect_ratio) as u32;
+    let focal_length = 1;
+
+    let origin = Vec3::new(0.0, 0.0, 0.0);
+    let horizontal = Vec3::new(viewport_width as f64, 0.0, 0.0);
+    let vertical = Vec3::new(0.0, viewport_height as f64, 0.0);
+    let upper_left_corner =
+        origin - (horizontal / 2.0) + (vertical / 2.0) + Vec3::new(0.0, 0.0, focal_length as f64);
+
+    for x in 0..image_width {
+        for y in 0..image_height {
             let pixel = img.get_pixel_mut(x, y);
-            let color_r = (x / 4) as u8;
-            let color_g = (y / 2) as u8;
-            let color_b = 63;
-            if clo.clock[x as usize][y as usize] == 1{
-                *pixel = image::Rgb([0, 0, 0]);
-            }
-            else{
-                *pixel = image::Rgb([255, 255, 255]);
-            }
+            let dx = (x as f64) / (image_width as f64);
+            let dy = (y as f64) / (image_height as f64);
+            let this_ray = Ray::new(
+                origin,
+                upper_left_corner + horizontal * dx + vertical * dy - origin,
+            );
+            let background = get_background(this_ray);
+            *pixel = Rgb([
+                (background.x() * 255.0) as u8,
+                (background.y() * 255.0) as u8,
+                (background.z() * 255.0) as u8,
+            ]);
         }
         bar.inc(1);
     }
