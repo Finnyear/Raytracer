@@ -1,1 +1,1 @@
-/mnt/d/Ivan/study/PPCA/raytracing/Raytracer/target/release/raytracer: /mnt/d/Ivan/study/PPCA/raytracing/Raytracer/src/main.rs /mnt/d/Ivan/study/PPCA/raytracing/Raytracer/src/ray.rs /mnt/d/Ivan/study/PPCA/raytracing/Raytracer/src/vec3.rs
+/mnt/d/Ivan/study/PPCA/raytracing/Raytracer/target/release/raytracer: /mnt/d/Ivan/study/PPCA/raytracing/Raytracer/src/hit.rs /mnt/d/Ivan/study/PPCA/raytracing/Raytracer/src/main.rs /mnt/d/Ivan/study/PPCA/raytracing/Raytracer/src/ray.rs /mnt/d/Ivan/study/PPCA/raytracing/Raytracer/src/vec3.rs
