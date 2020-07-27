@@ -9,7 +9,7 @@ pub use image::Rgb;
 pub use ray::Ray;
 mod hit;
 use hit::*;
-pub const inf:f64 = std::f64::INFINITY;
+pub const INF: f64 = std::f64::INFINITY;
 
 /*fn hit_sphere(center: Vec3, radius: f64, this_ray: &Ray) -> f64 {
     let a = this_ray.dir * this_ray.dir;
@@ -23,8 +23,8 @@ pub const inf:f64 = std::f64::INFINITY;
     }
 }*/
 
-fn get_color(this_ray: &Ray, world : &HittableList) -> Vec3 {
-    if let Option :: Some(rec) = world.hit(this_ray, 0.0, inf) {
+fn get_color(this_ray: &Ray, world: &HittableList) -> Vec3 {
+    if let Option::Some(rec) = world.hit(this_ray, 0.0, INF) {
         return Vec3::new(rec.nor.x + 1.0, rec.nor.y + 1.0, rec.nor.z + 1.0) * 0.5;
     }
     let unit_dir = this_ray.dir.unit();
@@ -52,9 +52,9 @@ fn main() {
     let upper_left_corner =
         origin - (horizontal / 2.0) - (vertical / 2.0) - Vec3::new(0.0, 0.0, focal_length as f64);
 
-    let mut world: HittableList = HittableList :: default();
-    world.add(Box :: new(Sphere :: new(Vec3 :: new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box :: new(Sphere :: new(Vec3 :: new(0.0, -100.5, -1.0), 100.0)));
+    let mut world: HittableList = HittableList::default();
+    world.add(Box::new(Sphere::new(Vec3::new(0.0, 0.0, -1.0), 0.5)));
+    world.add(Box::new(Sphere::new(Vec3::new(0.0, -100.5, -1.0), 100.0)));
 
     for x in 0..image_width {
         for y in 0..image_height {
