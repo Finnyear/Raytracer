@@ -1,11 +1,14 @@
+use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-#[derive(Default, Debug, Copy, Clone)]
+use std::sync::Arc;
+#[derive(Clone)]
 pub struct HitRecord {
     pub p: Vec3,
     pub nor: Vec3,
     pub t: f64,
     pub nor_dir: bool,
+    pub mat_ptr: Arc<dyn Material>,
 }
 impl HitRecord {
     fn set_face_normal(&mut self, this_ray: &Ray, out_nor: Vec3) {
@@ -23,10 +26,15 @@ pub trait Hittable {
 pub struct Sphere {
     pub center: Vec3,
     pub radius: f64,
+    pub mat_ptr: Arc<dyn Material>,
 }
 impl Sphere {
-    pub fn new(center: Vec3, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Vec3, radius: f64, mat_ptr: Arc<dyn Material>) -> Self {
+        Self {
+            center,
+            radius,
+            mat_ptr,
+        }
     }
 }
 impl Hittable for Sphere {
@@ -36,7 +44,13 @@ impl Hittable for Sphere {
         let c =
             (this_ray.ori - self.center) * (this_ray.ori - self.center) - self.radius * self.radius;
         let dt = half_b * half_b - a * c;
-        let mut rec: HitRecord = HitRecord::default();
+        let mut rec: HitRecord = HitRecord {
+            p: Vec3::zero(),
+            nor: Vec3::zero(),
+            t: 0.0,
+            nor_dir: false,
+            mat_ptr: self.mat_ptr.clone(),
+        };
         if dt > 0.0 {
             let root = dt.sqrt();
             let t = (-half_b - root) / a;
@@ -45,6 +59,7 @@ impl Hittable for Sphere {
                 rec.p = this_ray.pos(t);
                 let out_nor = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(this_ray, out_nor);
+                // rec.mat_ptr = self.mat_ptr;
                 return Some(rec);
             }
             let t = (-half_b + root) / a;
@@ -53,6 +68,7 @@ impl Hittable for Sphere {
                 rec.p = this_ray.pos(t);
                 let out_nor = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(this_ray, out_nor);
+                // rec.mat_ptr = self.mat_ptr;
                 return Some(rec);
             }
         }
@@ -75,7 +91,7 @@ impl Hittable for HittableList {
         let mut _tmx = tmx;
         for object in self.objects.iter() {
             if let Option::Some(_rec) = object.hit(this_ray, tmn, _tmx) {
-                rec = Option::Some(_rec);
+                rec = Option::Some(_rec.clone());
                 _tmx = _rec.t;
             }
         }

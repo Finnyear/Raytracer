@@ -1,5 +1,5 @@
+use crate::random::*;
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
-
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct Vec3 {
     pub x: f64,
@@ -173,6 +173,20 @@ impl Vec3 {
             z: v1.x * v2.y - v1.y * v2.x,
         }
     }
+    pub fn random01() -> Self {
+        Self {
+            x: get_rand01(),
+            y: get_rand01(),
+            z: get_rand01(),
+        }
+    }
+    pub fn random(mn: f64, mx: f64) -> Self {
+        Self {
+            x: get_rand(mn, mx),
+            y: get_rand(mn, mx),
+            z: get_rand(mn, mx),
+        }
+    }
 }
 
 impl Neg for Vec3 {
@@ -201,8 +215,32 @@ impl Vec3 {
             z: self.z / len,
         }
     }
+    pub fn change(&self, other: Self) -> Self {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
+        }
+    }
 }
-
+pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - n * (2.0 * (v * n))
+}
+pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64) -> Vec3 {
+    let cos_theta = (-uv) * n;
+    let r_out_perp = (uv + (n * cos_theta)) * etai_over_etat;
+    let r_out_parallel = n * (-(((1.0 - r_out_perp.squared_length()).abs()).sqrt()));
+    r_out_perp + r_out_parallel
+}
+pub fn random_in_unit_disk() -> Vec3 {
+    loop {
+        let p = Vec3::new(get_rand(-1.0, 1.0), get_rand(-1.0, 1.0), 0.0);
+        if p.squared_length() >= 1.0 {
+            continue;
+        }
+        return p;
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
