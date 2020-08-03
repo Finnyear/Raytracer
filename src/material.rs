@@ -1,16 +1,23 @@
 use crate::hit::HitRecord;
 use crate::random::*;
 use crate::ray::Ray;
+use crate::texture::*;
 use crate::vec3::*;
+use std::sync::Arc;
 pub trait Material {
     fn scatter(&self, this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray)>;
 }
 
 pub struct Lambertian {
-    albedo: Vec3,
+    albedo: Arc<dyn Texture>,
 }
 impl Lambertian {
     pub fn new(albedo: Vec3) -> Self {
+        Self {
+            albedo: Arc::new(SolidColor::new(albedo)),
+        }
+    }
+    pub fn newArc(albedo: Arc<dyn Texture>) -> Self {
         Self { albedo }
     }
 }
@@ -21,7 +28,7 @@ impl Material for Lambertian {
             ori: rec.p,
             dir: sca_dir,
         };
-        let atten_col = self.albedo;
+        let atten_col = self.albedo.value(rec.u, rec.v, rec.p);
         Option::Some((atten_col, scattered))
     }
 }

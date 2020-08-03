@@ -18,6 +18,8 @@ pub const INF: f64 = std::f64::MAX;
 pub const PI: f64 = std::f64::consts::PI;
 mod random;
 use random::*;
+mod texture;
+use texture::*;
 
 /*fn hit_sphere(center: Vec3, radius: f64, this_ray: &Ray) -> f64 {
     let a = this_ray.dir * this_ray.dir;
@@ -52,12 +54,22 @@ fn get_color(this_ray: &Ray, world: &HittableList, depth: i32) -> Vec3 {
 pub fn random_scene() -> HittableList {
     let mut world = HittableList::default();
 
-    let mat_ground = Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)));
+    let checker = Arc::new(checker_texture::new(
+        Arc::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
+        Arc::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+    ));
     world.add(Box::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        mat_ground.clone(),
+        Arc::new(Lambertian::newArc(checker)),
     )));
+
+    // let mat_ground = Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)));
+    // world.add(Box::new(Sphere::new(
+    //     Vec3::new(0.0, -1000.0, 0.0),
+    //     1000.0,
+    //     mat_ground.clone(),
+    // )));
 
     for i in -11..11 {
         for j in -11..11 {
@@ -68,7 +80,7 @@ pub fn random_scene() -> HittableList {
                 j as f64 + 0.9 * get_rand01(),
             );
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if (choose_mat < 0.8) {
+                if choose_mat < 0.8 {
                     let albedo = Vec3::random01().change(Vec3::random01());
                     let sphere_material = Arc::new(Lambertian::new(albedo));
                     world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
@@ -118,8 +130,8 @@ fn main() {
     let image_width: u32 = ((image_height as f64) * aspect_ratio) as u32;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
-    let SAM_NUM: i32 = 100;
-    let MAX_DEP: i32 = 50;
+    const SAM_NUM: i32 = 10;
+    const MAX_DEP: i32 = 5;
 
     // let viewport_height = 2;
     // let viewport_width = ((viewport_height as f64) * aspect_ratio) as u32;

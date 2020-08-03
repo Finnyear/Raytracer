@@ -2,11 +2,14 @@ use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::sync::Arc;
+pub const PI: f64 = std::f64::consts::PI;
 #[derive(Clone)]
 pub struct HitRecord {
     pub p: Vec3,
     pub nor: Vec3,
     pub t: f64,
+    pub u: f64,
+    pub v: f64,
     pub nor_dir: bool,
     pub mat_ptr: Arc<dyn Material>,
 }
@@ -22,6 +25,12 @@ impl HitRecord {
 }
 pub trait Hittable {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord>;
+}
+pub fn get_sphere_uv(p: Vec3, u: &mut f64, v: &mut f64) {
+    let phi = p.z.atan2(p.x);
+    let theta = p.y.asin();
+    *u = 1.0 - (phi + PI) / (2.0 * PI);
+    *v = (theta + PI / 2.0) / PI;
 }
 pub struct Sphere {
     pub center: Vec3,
@@ -48,6 +57,8 @@ impl Hittable for Sphere {
             p: Vec3::zero(),
             nor: Vec3::zero(),
             t: 0.0,
+            u: 0.0,
+            v: 0.0,
             nor_dir: false,
             mat_ptr: self.mat_ptr.clone(),
         };
@@ -59,6 +70,7 @@ impl Hittable for Sphere {
                 rec.p = this_ray.pos(t);
                 let out_nor = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(this_ray, out_nor);
+                get_sphere_uv((rec.p - self.center) / self.radius, &mut rec.u, &mut rec.v);
                 // rec.mat_ptr = self.mat_ptr;
                 return Some(rec);
             }
@@ -68,6 +80,7 @@ impl Hittable for Sphere {
                 rec.p = this_ray.pos(t);
                 let out_nor = (rec.p - self.center) / self.radius;
                 rec.set_face_normal(this_ray, out_nor);
+                get_sphere_uv((rec.p - self.center) / self.radius, &mut rec.u, &mut rec.v);
                 // rec.mat_ptr = self.mat_ptr;
                 return Some(rec);
             }
