@@ -18,6 +18,14 @@ pub struct Vec3 {
 //     }
 // }
 impl Vec3 {
+    pub fn get(&self, x: i32) -> f64 {
+        match x {
+            0 => self.x,
+            1 => self.y,
+            2 => self.z,
+            _ => 0.0,
+        }
+    }
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }

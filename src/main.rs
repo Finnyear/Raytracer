@@ -20,56 +20,51 @@ mod random;
 use random::*;
 mod texture;
 use texture::*;
+mod aabb;
 
-/*fn hit_sphere(center: Vec3, radius: f64, this_ray: &Ray) -> f64 {
-    let a = this_ray.dir * this_ray.dir;
-    let half_b = (this_ray.ori - center) * (this_ray.dir);
-    let c = (this_ray.ori - center) * (this_ray.ori - center) - radius * radius;
-    let dt = half_b * half_b - a * c;
-    if dt <= 0.0 {
-        -1.0
-    } else {
-        (-half_b - dt.sqrt()) / a
-    }
-}*/
-// pub fn degrees_to_radians(degrees: f64) -> f64 {
-//     degrees * PI / 180.0
+// fn get_color(this_ray: &Ray, world: &HittableList, depth: i32) -> Vec3 {
+//     if depth <= 0 {
+//         return Vec3::zero();
+//     }
+//     if let Option::Some(rec) = world.hit(this_ray, 0.001, INF) {
+//         // let target = rec.p + random_in_hemisphere(rec.nor);
+//         if let Option::Some((atten_col, scattered)) = rec.mat_ptr.scatter(this_ray, &rec) {
+//             return get_color(&scattered, world, depth - 1).change(atten_col);
+//         }
+//         return Vec3::zero();
+//     }
+//     let unit_dir = this_ray.dir.unit();
+//     let k: f64 = (unit_dir.y + 1.0) / 2.0;
+//     (Vec3::new(1.0, 1.0, 1.0) * (1.0 - k)) + (Vec3::new(0.5, 0.7, 1.0) * k)
 // }
-fn get_color(this_ray: &Ray, world: &HittableList, depth: i32) -> Vec3 {
+
+fn get_color(this_ray: &Ray, background: Vec3, world: &HittableList, depth: i32) -> Vec3 {
     if depth <= 0 {
         return Vec3::zero();
     }
     if let Option::Some(rec) = world.hit(this_ray, 0.001, INF) {
-        // let target = rec.p + random_in_hemisphere(rec.nor);
+        let emitted = rec.mat_ptr.emitted(rec.u, rec.v, rec.p);
         if let Option::Some((atten_col, scattered)) = rec.mat_ptr.scatter(this_ray, &rec) {
-            return get_color(&scattered, world, depth - 1).change(atten_col);
+            return emitted + get_color(&scattered, background, world, depth - 1).change(atten_col);
         }
-        return Vec3::zero();
+        emitted
+    } else {
+        background
     }
-    let unit_dir = this_ray.dir.unit();
-    let k: f64 = (unit_dir.y + 1.0) / 2.0;
-    (Vec3::new(1.0, 1.0, 1.0) * (1.0 - k)) + (Vec3::new(0.5, 0.7, 1.0) * k)
 }
 
 pub fn random_scene() -> HittableList {
     let mut world = HittableList::default();
 
     let checker = Arc::new(checker_texture::new(
-        Arc::new(SolidColor::new(Vec3::new(0.2, 0.3, 0.1))),
-        Arc::new(SolidColor::new(Vec3::new(0.9, 0.9, 0.9))),
+        Vec3::new(0.2, 0.3, 0.1),
+        Vec3::new(0.9, 0.9, 0.9),
     ));
-    world.add(Box::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
         Arc::new(Lambertian::newArc(checker)),
     )));
-
-    // let mat_ground = Arc::new(Lambertian::new(Vec3::new(0.5, 0.5, 0.5)));
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(0.0, -1000.0, 0.0),
-    //     1000.0,
-    //     mat_ground.clone(),
-    // )));
 
     for i in -11..11 {
         for j in -11..11 {
@@ -83,146 +78,239 @@ pub fn random_scene() -> HittableList {
                 if choose_mat < 0.8 {
                     let albedo = Vec3::random01().change(Vec3::random01());
                     let sphere_material = Arc::new(Lambertian::new(albedo));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    let center2 = center + Vec3::new(0.0, get_rand(0.0, 0.5), 0.0);
+                    world.add(Arc::new(MovingSphere::new(
+                        center,
+                        center2,
+                        0.0,
+                        1.0,
+                        0.2,
+                        sphere_material,
+                    )));
                 } else if choose_mat < 0.95 {
                     let albedo = Vec3::random(0.5, 1.0);
                     let fuzz = get_rand(0.0, 0.5);
                     let sphere_material = Arc::new(Metal::new(albedo, fuzz));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
                 } else {
                     let sphere_material = Arc::new(Dielectric::new(1.5));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
                 }
             }
         }
     }
 
     let material1 = Arc::new(Dielectric::new(1.5));
-    world.add(Box::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Vec3::new(0.0, 1.0, 0.0),
         1.0,
         material1,
     )));
 
     let material2 = Arc::new(Lambertian::new(Vec3::new(0.4, 0.2, 0.1)));
-    world.add(Box::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
         material2,
     )));
 
     let material3 = Arc::new(Metal::new(Vec3::new(0.7, 0.6, 0.5), 0.0));
-    world.add(Box::new(Sphere::new(
+    world.add(Arc::new(Sphere::new(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
         material3,
     )));
 
-    return world;
+    world
+}
+
+pub fn two_spheres() -> HittableList {
+    let mut objects = HittableList::default();
+    let checker = Arc::new(checker_texture::new(
+        Vec3::new(0.2, 0.3, 0.1),
+        Vec3::new(0.9, 0.9, 0.9),
+    ));
+    objects.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, -10.0, 0.0),
+        10.0,
+        Arc::new(Lambertian::newArc(checker.clone())),
+    )));
+    objects.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, 10.0, 0.0),
+        10.0,
+        Arc::new(Lambertian::newArc(checker.clone())),
+    )));
+    objects
+}
+
+pub fn simple_light() -> HittableList {
+    let mut objects = HittableList::default();
+    let checker = Arc::new(checker_texture::new(
+        Vec3::new(0.2, 0.3, 0.1),
+        Vec3::new(0.9, 0.9, 0.9),
+    ));
+    objects.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian::newArc(checker.clone())),
+    )));
+    objects.add(Arc::new(Sphere::new(
+        Vec3::new(0.0, 2.0, 0.0),
+        2.0,
+        Arc::new(Lambertian::newArc(checker.clone())),
+    )));
+    let difflight = Arc::new(DiffuseLight::new(Vec3::new(4.0, 4.0, 4.0)));
+    objects.add(Arc::new(xy_rect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight)));
+    objects
+}
+
+pub fn cornellbox() -> HittableList {
+    let mut objects = HittableList::default();
+
+    let red = Arc::new(Lambertian::new(Vec3::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(Vec3::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(Vec3::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::new(Vec3::new(15.0, 15.0, 15.0)));
+
+    objects.add(Arc::new(yz_rect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        green.clone(),
+    )));
+    objects.add(Arc::new(yz_rect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        red.clone(),
+    )));
+    objects.add(Arc::new(xz_rect::new(
+        213.0,
+        343.0,
+        227.0,
+        332.0,
+        554.0,
+        light.clone(),
+    )));
+    objects.add(Arc::new(xz_rect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    )));
+    objects.add(Arc::new(xz_rect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+    objects.add(Arc::new(xy_rect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+
+    return objects;
 }
 
 fn main() {
     let x = Vec3::new(1.0, 1.0, 1.0);
     println!("{:?}", x);
 
-    let aspect_ratio: f64 = 2.0 / 1.0;
-    let image_height: u32 = 512;
-    let image_width: u32 = ((image_height as f64) * aspect_ratio) as u32;
-    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
-    let bar = ProgressBar::new(image_width as u64);
-    const SAM_NUM: i32 = 10;
-    const MAX_DEP: i32 = 5;
+    let mut aspect_ratio: f64 = 2.0 / 1.0;
+    let mut image_height: u32 = 512;
+    let mut sam_num: i32 = 10;
+    let mut max_dep: i32 = 50;
 
-    // let viewport_height = 2;
-    // let viewport_width = ((viewport_height as f64) * aspect_ratio) as u32;
-    // let focal_length = 1;
-
-    // let origin = Vec3::new(0.0, 0.0, 0.0);
-    // let horizontal = Vec3::new(viewport_width as f64, 0.0, 0.0);
-    // let vertical = Vec3::new(0.0, viewport_height as f64, 0.0);
-    // let lower_left_corner =
-    //     origin - (horizontal / 2.0) - (vertical / 2.0) - Vec3::new(0.0, 0.0, focal_length as f64);
-
-    // let R = (PI / 4.0).cos();
-
-    // let mat_ground = Arc::new(Lambertian::new(Vec3::new(0.8, 0.8, 0.0)));
-    // let mat_center = Arc::new(Lambertian::new(Vec3::new(0.1, 0.2, 0.5)));
-    // let mat_left = Arc::new(Dielectric::new(1.5));
-    // let mat_right = Arc::new(Metal::new(Vec3::new(0.8, 0.6, 0.2), 1.0));
-    // let mat_left = Arc::new(Lambertian::new(Vec3::new(0.0, 0.0, 1.0)));
-    // let mat_right = Arc::new(Lambertian::new(Vec3::new(1.0, 0.0, 0.0)));
-
-    let world: HittableList = random_scene();
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(-R, 0.0, -1.0),
-    //     R,
-    //     mat_left.clone(),
-    // )));
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(R, 0.0, -1.0),
-    //     R,
-    //     mat_right.clone(),
-    // )));
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(0.0, -100.5, -1.0),
-    //     100.0,
-    //     mat_ground.clone(),
-    // )));
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(0.0, 0.0, -1.0),
-    //     0.5,
-    //     mat_center.clone(),
-    // )));
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(-1.0, 0.0, -1.0),
-    //     0.5,
-    //     mat_left.clone(),
-    // )));
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(-1.0, 0.0, -1.0),
-    //     -0.4,
-    //     mat_left.clone(),
-    // )));
-    // world.add(Box::new(Sphere::new(
-    //     Vec3::new(1.0, 0.0, -1.0),
-    //     0.5,
-    //     mat_right.clone(),
-    // )));
-
-    let lookfrom = Vec3::new(13.0, 2.0, 3.0);
-    let lookat = Vec3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
-    let aperture = 0.1;
+
+    let mut world = HittableList::default();
+    let mut lookfrom: Vec3;
+    let mut lookat: Vec3;
+    let mut vfov = 40.0;
+    let mut aperture = 0.0;
+    let mut background = Vec3::zero();
+
+    // {
+    //     //Case 1:
+    //     world = random_scene();
+    //     background = Vec3 :: new(0.70, 0.80, 1.00);
+    //     lookfrom = Vec3::new(13.0, 2.0, 3.0);
+    //     lookat = Vec3::new(0.0, 0.0, 0.0);
+    //     vfov = 20.0;
+    //     aperture = 0.1;
+    // }
+    // {
+    //     //Case 2:
+    //     world = two_spheres();
+    //     background = Vec3 :: new(0.70, 0.80, 1.00);
+    //     lookfrom = Vec3::new(13.0, 2.0, 3.0);
+    //     lookat = Vec3::new(0.0, 0.0, 0.0);
+    //     vfov = 20.0;
+    // }
+    // {
+    //     //Case 5:
+    //     world = simple_light();
+    //     sam_num = 400;
+    //     background = Vec3::zero();
+    //     lookfrom = Vec3::new(26.0, 3.0, 6.0);
+    //     lookat = Vec3::new(0.0, 2.0, 0.0);
+    //     vfov = 20.0;
+    // }
+    {
+        //Case 6:
+        world = cornellbox();
+        aspect_ratio = 1.0;
+        image_height = 600;
+        sam_num = 1000;
+        background = Vec3::zero();
+        lookfrom = Vec3::new(278.0, 278.0, -800.0);
+        lookat = Vec3::new(278.0, 278.0, 0.0);
+        vfov = 40.0;
+    }
     let cam: Camera = Camera::new(
         lookfrom,
         lookat,
         vup,
-        20.0,
+        vfov,
         aspect_ratio,
         aperture,
         dist_to_focus,
+        0.0,
+        1.0,
     );
 
-    reflect(Vec3::ones(), Vec3::ones());
+    let mut image_width: u32 = ((image_height as f64) * aspect_ratio) as u32;
+    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
+    let bar = ProgressBar::new(image_width as u64);
+    // reflect(Vec3::ones(), Vec3::ones());
 
     for x in 0..image_width {
         for y in 0..image_height {
             let pixel = img.get_pixel_mut(x, image_height - 1 - y);
             let mut color: Vec3 = Vec3::zero();
-            for _i in 0..SAM_NUM {
+            for _i in 0..sam_num {
                 let dx = (x as f64 + get_rand01()) / (image_width as f64);
                 let dy = (y as f64 + get_rand01()) / (image_height as f64);
                 let this_ray = cam.get_ray(dx, dy);
-                color += get_color(&this_ray, &world, MAX_DEP);
+                color += get_color(&this_ray, background, &world, max_dep);
             }
             *pixel = Rgb([
-                ((color.x / SAM_NUM as f64).sqrt() * 255.0) as u8,
-                ((color.y / SAM_NUM as f64).sqrt() * 255.0) as u8,
-                ((color.z / SAM_NUM as f64).sqrt() * 255.0) as u8,
-                // (color.x as f64 * 255.0) as u8,
-                // (color.y as f64 * 255.0) as u8,
-                // (color.z as f64 * 255.0) as u8,
+                ((color.x / sam_num as f64).sqrt() * 255.0) as u8,
+                ((color.y / sam_num as f64).sqrt() * 255.0) as u8,
+                ((color.z / sam_num as f64).sqrt() * 255.0) as u8,
             ]);
         }
         bar.inc(1);

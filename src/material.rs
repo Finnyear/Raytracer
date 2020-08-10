@@ -6,6 +6,9 @@ use crate::vec3::*;
 use std::sync::Arc;
 pub trait Material {
     fn scatter(&self, this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray)>;
+    fn emitted(&self, u: f64, v: f64, p: Vec3) -> Vec3 {
+        Vec3::zero()
+    }
 }
 
 pub struct Lambertian {
@@ -27,6 +30,7 @@ impl Material for Lambertian {
         let scattered = Ray {
             ori: rec.p,
             dir: sca_dir,
+            tm: _this_ray.tm,
         };
         let atten_col = self.albedo.value(rec.u, rec.v, rec.p);
         Option::Some((atten_col, scattered))
@@ -51,6 +55,7 @@ impl Material for Metal {
         let scattered = Ray {
             ori: rec.p,
             dir: reflected + random_in_unit_sphere() * self.fuzz,
+            tm: 0.0,
         };
         let atten_col = self.albedo;
         if scattered.dir * rec.nor > 0.0 {
@@ -89,6 +94,7 @@ impl Material for Dielectric {
             let scattered = Ray {
                 ori: rec.p,
                 dir: reflected,
+                tm: 0.0,
             };
             return Option::Some((atten_col, scattered));
         }
@@ -98,6 +104,7 @@ impl Material for Dielectric {
             let scattered = Ray {
                 ori: rec.p,
                 dir: reflected,
+                tm: 0.0,
             };
             return Option::Some((atten_col, scattered));
         }
@@ -105,7 +112,30 @@ impl Material for Dielectric {
         let scattered = Ray {
             ori: rec.p,
             dir: refracted,
+            tm: 0.0,
         };
         Option::Some((atten_col, scattered))
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Arc<dyn Texture>,
+}
+impl DiffuseLight {
+    pub fn new(emit: Vec3) -> Self {
+        Self {
+            emit: Arc::new(SolidColor::new(emit)),
+        }
+    }
+    pub fn newArc(emit: Arc<dyn Texture>) -> Self {
+        Self { emit }
+    }
+}
+impl Material for DiffuseLight {
+    fn scatter(&self, _this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray)> {
+        Option::None
+    }
+    fn emitted(&self, u: f64, v: f64, p: Vec3) -> Vec3 {
+        self.emit.value(u, v, p)
     }
 }

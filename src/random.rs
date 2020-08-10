@@ -11,6 +11,9 @@ pub fn get_rand(mn: f64, mx: f64) -> f64 {
     let x: f64 = rng.gen(); // generates a float between 0 and 1
     x * (mx - mn) + mn
 }
+pub fn random_int(mn: i32, mx: i32) -> i32 {
+    get_rand(mn as f64, mx as f64 + 1.0) as i32
+}
 pub fn get_rand_vec3(mn: f64, mx: f64) -> Vec3 {
     Vec3::new(get_rand(mn, mx), get_rand(mn, mx), get_rand(mn, mx))
 }
