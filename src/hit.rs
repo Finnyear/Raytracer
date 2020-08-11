@@ -236,23 +236,24 @@ pub struct BvhNode {
 }
 impl Hittable for BvhNode {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
-        if self.mybox.hit(*this_ray, tmn, tmx) {
-            return Option::None;
-        }
-        let hit_left = self.left.hit(&this_ray, tmn, tmx);
-        if let Option::Some(rec_left) = hit_left {
-            let hit_right = self.right.hit(&this_ray, tmn, rec_left.t);
-            if let Option::Some(rec_right) = hit_right {
-                return Some(rec_right);
-            } else {
-                return Some(rec_left);
-            }
+        if !self.mybox.hit(*this_ray, tmn, tmx) {
+            Option::None
         } else {
-            let hit_right = self.right.hit(&this_ray, tmn, tmx);
-            if let Option::Some(rec_right) = hit_right {
-                return Some(rec_right);
+            let hit_left = self.left.hit(&this_ray, tmn, tmx);
+            if let Option::Some(rec_left) = hit_left {
+                let hit_right = self.right.hit(&this_ray, tmn, rec_left.t);
+                if let Option::Some(rec_right) = hit_right {
+                    Option::Some(rec_right)
+                } else {
+                    Option::Some(rec_left)
+                }
             } else {
-                return Option::None;
+                let hit_right = self.right.hit(&this_ray, tmn, tmx);
+                if let Option::Some(rec_right) = hit_right {
+                    Option::Some(rec_right)
+                } else {
+                    Option::None
+                }
             }
         }
     }
