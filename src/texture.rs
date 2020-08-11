@@ -20,22 +20,22 @@ impl Texture for SolidColor {
         self.col
     }
 }
-pub struct checker_texture {
+pub struct CheckerTexture {
     pub odd: Arc<dyn Texture>,
     pub even: Arc<dyn Texture>,
 }
-impl checker_texture {
+impl CheckerTexture {
     pub fn new(odd: Vec3, even: Vec3) -> Self {
         Self {
             odd: Arc::new(SolidColor::new(odd)),
             even: Arc::new(SolidColor::new(even)),
         }
     }
-    pub fn newArc(odd: Arc<dyn Texture>, even: Arc<dyn Texture>) -> Self {
+    pub fn newarc(odd: Arc<dyn Texture>, even: Arc<dyn Texture>) -> Self {
         Self { odd, even }
     }
 }
-impl Texture for checker_texture {
+impl Texture for CheckerTexture {
     fn value(&self, u: f64, v: f64, p: Vec3) -> Vec3 {
         let sines = ((p.x * 10.0).sin()) * ((p.y * 10.0).sin()) * ((p.z * 10.0).sin());
         if sines < 0.0 {

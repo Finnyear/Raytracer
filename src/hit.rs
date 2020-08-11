@@ -1,10 +1,12 @@
 use crate::aabb::*;
+use crate::camera::degrees_to_radians;
 use crate::material::Material;
 use crate::random::*;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::sync::Arc;
 pub const PI: f64 = std::f64::consts::PI;
+pub const INF: f64 = std::f64::MAX;
 #[derive(Clone)]
 pub struct HitRecord {
     pub p: Vec3,
@@ -290,7 +292,7 @@ impl BvhNode {
     }
 }
 
-pub struct xy_rect {
+pub struct XyRect {
     x0: f64,
     x1: f64,
     y0: f64,
@@ -299,7 +301,7 @@ pub struct xy_rect {
     mp: Arc<dyn Material>,
 }
 
-impl xy_rect {
+impl XyRect {
     pub fn new(x0: f64, x1: f64, y0: f64, y1: f64, k: f64, mp: Arc<dyn Material>) -> Self {
         Self {
             x0,
@@ -312,7 +314,7 @@ impl xy_rect {
     }
 }
 
-impl Hittable for xy_rect {
+impl Hittable for XyRect {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
         let t = (self.k - this_ray.ori.z) / this_ray.dir.z;
         if t < tmn || t > tmx {
@@ -344,7 +346,7 @@ impl Hittable for xy_rect {
     }
 }
 
-pub struct xz_rect {
+pub struct XzRect {
     x0: f64,
     x1: f64,
     z0: f64,
@@ -353,7 +355,7 @@ pub struct xz_rect {
     mp: Arc<dyn Material>,
 }
 
-impl xz_rect {
+impl XzRect {
     pub fn new(x0: f64, x1: f64, z0: f64, z1: f64, k: f64, mp: Arc<dyn Material>) -> Self {
         Self {
             x0,
@@ -366,7 +368,7 @@ impl xz_rect {
     }
 }
 
-impl Hittable for xz_rect {
+impl Hittable for XzRect {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
         let t = (self.k - this_ray.ori.y) / this_ray.dir.y;
         if t < tmn || t > tmx {
@@ -386,7 +388,7 @@ impl Hittable for xz_rect {
             nor_dir: false,
             mat_ptr: self.mp.clone(),
         };
-        let outward_normal = Vec3::new(0.0, 0.0, 1.0);
+        let outward_normal = Vec3::new(0.0, 1.0, 0.0);
         rec.set_face_normal(this_ray, outward_normal);
         Option::Some(rec)
     }
@@ -398,7 +400,7 @@ impl Hittable for xz_rect {
     }
 }
 
-pub struct yz_rect {
+pub struct YzRect {
     y0: f64,
     y1: f64,
     z0: f64,
@@ -407,7 +409,7 @@ pub struct yz_rect {
     mp: Arc<dyn Material>,
 }
 
-impl yz_rect {
+impl YzRect {
     pub fn new(y0: f64, y1: f64, z0: f64, z1: f64, k: f64, mp: Arc<dyn Material>) -> Self {
         Self {
             y0,
@@ -420,7 +422,7 @@ impl yz_rect {
     }
 }
 
-impl Hittable for yz_rect {
+impl Hittable for YzRect {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
         let t = (self.k - this_ray.ori.x) / this_ray.dir.x;
         if t < tmn || t > tmx {
@@ -440,7 +442,7 @@ impl Hittable for yz_rect {
             nor_dir: false,
             mat_ptr: self.mp.clone(),
         };
-        let outward_normal = Vec3::new(0.0, 0.0, 1.0);
+        let outward_normal = Vec3::new(1.0, 0.0, 0.0);
         rec.set_face_normal(this_ray, outward_normal);
         Option::Some(rec)
     }
@@ -449,5 +451,198 @@ impl Hittable for yz_rect {
             Vec3::new(self.y0, self.z0, self.k - 0.001),
             Vec3::new(self.y1, self.z1, self.k + 0.001),
         ))
+    }
+}
+
+pub struct Bbox {
+    boxmn: Vec3,
+    boxmx: Vec3,
+    sides: HittableList,
+}
+
+impl Bbox {
+    pub fn new(boxmn: Vec3, boxmx: Vec3, mat_ptr: Arc<dyn Material>) -> Self {
+        let mut sides = HittableList::default();
+        sides.add(Arc::new(XyRect::new(
+            boxmn.x,
+            boxmx.x,
+            boxmn.y,
+            boxmx.y,
+            boxmn.z,
+            mat_ptr.clone(),
+        )));
+        sides.add(Arc::new(XyRect::new(
+            boxmn.x,
+            boxmx.x,
+            boxmn.y,
+            boxmx.y,
+            boxmx.z,
+            mat_ptr.clone(),
+        )));
+        sides.add(Arc::new(XzRect::new(
+            boxmn.x,
+            boxmx.x,
+            boxmn.z,
+            boxmx.z,
+            boxmn.y,
+            mat_ptr.clone(),
+        )));
+        sides.add(Arc::new(XzRect::new(
+            boxmn.x,
+            boxmx.x,
+            boxmn.z,
+            boxmx.z,
+            boxmx.y,
+            mat_ptr.clone(),
+        )));
+        sides.add(Arc::new(YzRect::new(
+            boxmn.y,
+            boxmx.y,
+            boxmn.z,
+            boxmx.z,
+            boxmn.x,
+            mat_ptr.clone(),
+        )));
+        sides.add(Arc::new(YzRect::new(
+            boxmn.y,
+            boxmx.y,
+            boxmn.z,
+            boxmx.z,
+            boxmx.x,
+            mat_ptr.clone(),
+        )));
+        Self {
+            boxmn,
+            boxmx,
+            sides,
+        }
+    }
+}
+
+impl Hittable for Bbox {
+    fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
+        self.sides.hit(this_ray, tmn, tmx)
+    }
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+        Some(Aabb::new(self.boxmn, self.boxmx))
+    }
+}
+
+pub struct Translate {
+    ptr: Arc<dyn Hittable>,
+    offset: Vec3,
+}
+
+impl Translate {
+    pub fn new(ptr: Arc<dyn Hittable>, offset: Vec3) -> Self {
+        Self { ptr, offset }
+    }
+}
+
+impl Hittable for Translate {
+    fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
+        let moved_ray = Ray::new(this_ray.ori - self.offset, this_ray.dir, this_ray.tm);
+        if let Option::Some(mut rec) = self.ptr.hit(&moved_ray, tmn, tmx) {
+            rec.p += self.offset;
+            rec.set_face_normal(&moved_ray, rec.nor);
+            Option::Some(rec)
+        } else {
+            Option::None
+        }
+    }
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+        if let Option::Some(tmp) = self.ptr.bounding_box(t0, t1) {
+            let output_box = Aabb::new(tmp.mn + self.offset, tmp.mx + self.offset);
+            Option::Some(output_box)
+        } else {
+            Option::None
+        }
+    }
+}
+
+pub struct Rotatey {
+    ptr: Arc<dyn Hittable>,
+    sintheta: f64,
+    costheta: f64,
+    mybox: Option<Aabb>,
+}
+
+impl Rotatey {
+    pub fn new(ptr: Arc<dyn Hittable>, angle: f64) -> Self {
+        let radian = degrees_to_radians(angle);
+        let sintheta = radian.sin();
+        let costheta = radian.cos();
+        let mybox = ptr.bounding_box(0.0, 1.0);
+        if let Option::None = mybox {
+            return Self {
+                ptr,
+                sintheta,
+                costheta,
+                mybox,
+            };
+        }
+        let tmp = mybox.unwrap();
+        let mut mn = Vec3::new(INF, INF, INF);
+        let mut mx = Vec3::new(-INF, -INF, -INF);
+        for i in 0..2 {
+            for j in 0..2 {
+                for k in 0..2 {
+                    let x = i as f64 * tmp.mn.x + (1 - i) as f64 * tmp.mx.x;
+                    let y = j as f64 * tmp.mn.y + (1 - j) as f64 * tmp.mx.y;
+                    let z = k as f64 * tmp.mn.z + (1 - k) as f64 * tmp.mx.z;
+                    let newx = x * costheta + z * sintheta;
+                    let newz = -x * sintheta + z * costheta;
+                    let rotated_pos = Vec3::new(newx, y, newz);
+
+                    // mn.x = mn.x.min(rotated_pos.x);
+                    // mx.x = mx.x.max(rotated_pos.x);
+
+                    // mn.y = mn.y.min(rotated_pos.y);
+                    // mx.y = mx.y.max(rotated_pos.y);
+
+                    // mn.z = mn.z.min(rotated_pos.z);
+                    // mx.z = mx.z.max(rotated_pos.z);
+                    for c in 0..3 {
+                        *mn.get_mut(c) = mn.get(c).min(rotated_pos.get(c));
+                        *mx.get_mut(c) = mx.get(c).max(rotated_pos.get(c));
+                    }
+                }
+            }
+        }
+        let mybox = Option::Some(Aabb::new(mn, mx));
+        Self {
+            ptr,
+            sintheta,
+            costheta,
+            mybox,
+        }
+    }
+}
+
+impl Hittable for Rotatey {
+    fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
+        let mut ori = this_ray.ori;
+        let mut dir = this_ray.dir;
+        ori.x = self.costheta * this_ray.ori.x - self.sintheta * this_ray.ori.z;
+        ori.z = self.sintheta * this_ray.ori.x + self.costheta * this_ray.ori.z;
+        dir.x = self.costheta * this_ray.dir.x - self.sintheta * this_ray.dir.z;
+        dir.z = self.sintheta * this_ray.dir.x + self.costheta * this_ray.dir.z;
+        let rotated_ray = Ray::new(ori, dir, this_ray.tm);
+        if let Option::Some(mut rec) = self.ptr.hit(&rotated_ray, tmn, tmx) {
+            let mut p = rec.p;
+            let mut nor = rec.nor;
+            p.x = self.costheta * rec.p.x + self.sintheta * rec.p.z;
+            p.z = -self.sintheta * rec.p.x + self.costheta * rec.p.z;
+            nor.x = self.costheta * rec.nor.x + self.sintheta * rec.nor.z;
+            nor.z = -self.sintheta * rec.nor.x + self.costheta * rec.nor.z;
+            rec.p = p;
+            rec.set_face_normal(&rotated_ray, nor);
+            Option::Some(rec)
+        } else {
+            Option::None
+        }
+    }
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+        self.mybox.clone()
     }
 }

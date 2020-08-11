@@ -56,14 +56,14 @@ fn get_color(this_ray: &Ray, background: Vec3, world: &HittableList, depth: i32)
 pub fn random_scene() -> HittableList {
     let mut world = HittableList::default();
 
-    let checker = Arc::new(checker_texture::new(
+    let checker = Arc::new(CheckerTexture::new(
         Vec3::new(0.2, 0.3, 0.1),
         Vec3::new(0.9, 0.9, 0.9),
     ));
     world.add(Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Arc::new(Lambertian::newArc(checker)),
+        Arc::new(Lambertian::newarc(checker)),
     )));
 
     for i in -11..11 {
@@ -126,41 +126,41 @@ pub fn random_scene() -> HittableList {
 
 pub fn two_spheres() -> HittableList {
     let mut objects = HittableList::default();
-    let checker = Arc::new(checker_texture::new(
+    let checker = Arc::new(CheckerTexture::new(
         Vec3::new(0.2, 0.3, 0.1),
         Vec3::new(0.9, 0.9, 0.9),
     ));
     objects.add(Arc::new(Sphere::new(
         Vec3::new(0.0, -10.0, 0.0),
         10.0,
-        Arc::new(Lambertian::newArc(checker.clone())),
+        Arc::new(Lambertian::newarc(checker.clone())),
     )));
     objects.add(Arc::new(Sphere::new(
         Vec3::new(0.0, 10.0, 0.0),
         10.0,
-        Arc::new(Lambertian::newArc(checker.clone())),
+        Arc::new(Lambertian::newarc(checker.clone())),
     )));
     objects
 }
 
 pub fn simple_light() -> HittableList {
     let mut objects = HittableList::default();
-    let checker = Arc::new(checker_texture::new(
+    let checker = Arc::new(CheckerTexture::new(
         Vec3::new(0.2, 0.3, 0.1),
         Vec3::new(0.9, 0.9, 0.9),
     ));
     objects.add(Arc::new(Sphere::new(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Arc::new(Lambertian::newArc(checker.clone())),
+        Arc::new(Lambertian::newarc(checker.clone())),
     )));
     objects.add(Arc::new(Sphere::new(
         Vec3::new(0.0, 2.0, 0.0),
         2.0,
-        Arc::new(Lambertian::newArc(checker.clone())),
+        Arc::new(Lambertian::newarc(checker.clone())),
     )));
     let difflight = Arc::new(DiffuseLight::new(Vec3::new(4.0, 4.0, 4.0)));
-    objects.add(Arc::new(xy_rect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight)));
+    objects.add(Arc::new(XyRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight)));
     objects
 }
 
@@ -172,7 +172,7 @@ pub fn cornellbox() -> HittableList {
     let green = Arc::new(Lambertian::new(Vec3::new(0.12, 0.45, 0.15)));
     let light = Arc::new(DiffuseLight::new(Vec3::new(15.0, 15.0, 15.0)));
 
-    objects.add(Arc::new(yz_rect::new(
+    objects.add(Arc::new(YzRect::new(
         0.0,
         555.0,
         0.0,
@@ -180,7 +180,7 @@ pub fn cornellbox() -> HittableList {
         555.0,
         green.clone(),
     )));
-    objects.add(Arc::new(yz_rect::new(
+    objects.add(Arc::new(YzRect::new(
         0.0,
         555.0,
         0.0,
@@ -188,7 +188,7 @@ pub fn cornellbox() -> HittableList {
         0.0,
         red.clone(),
     )));
-    objects.add(Arc::new(xz_rect::new(
+    objects.add(Arc::new(XzRect::new(
         213.0,
         343.0,
         227.0,
@@ -196,7 +196,7 @@ pub fn cornellbox() -> HittableList {
         554.0,
         light.clone(),
     )));
-    objects.add(Arc::new(xz_rect::new(
+    objects.add(Arc::new(XzRect::new(
         0.0,
         555.0,
         0.0,
@@ -204,7 +204,7 @@ pub fn cornellbox() -> HittableList {
         0.0,
         white.clone(),
     )));
-    objects.add(Arc::new(xz_rect::new(
+    objects.add(Arc::new(XzRect::new(
         0.0,
         555.0,
         0.0,
@@ -212,7 +212,7 @@ pub fn cornellbox() -> HittableList {
         555.0,
         white.clone(),
     )));
-    objects.add(Arc::new(xy_rect::new(
+    objects.add(Arc::new(XyRect::new(
         0.0,
         555.0,
         0.0,
@@ -220,6 +220,23 @@ pub fn cornellbox() -> HittableList {
         555.0,
         white.clone(),
     )));
+    let box1 = Arc::new(Bbox::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 330.0, 165.0),
+        white.clone(),
+    ));
+    let box1 = Arc::new(Rotatey::new(box1, 15.0));
+    let box1 = Arc::new(Translate::new(box1, Vec3::new(265.0, 0.0, 295.0)));
+    objects.add(box1);
+
+    let box2 = Arc::new(Bbox::new(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(165.0, 165.0, 165.0),
+        white.clone(),
+    ));
+    let box2 = Arc::new(Rotatey::new(box2, -18.0));
+    let box2 = Arc::new(Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));
+    objects.add(box2);
 
     return objects;
 }

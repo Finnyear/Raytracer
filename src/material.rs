@@ -20,7 +20,7 @@ impl Lambertian {
             albedo: Arc::new(SolidColor::new(albedo)),
         }
     }
-    pub fn newArc(albedo: Arc<dyn Texture>) -> Self {
+    pub fn newarc(albedo: Arc<dyn Texture>) -> Self {
         Self { albedo }
     }
 }
@@ -127,7 +127,7 @@ impl DiffuseLight {
             emit: Arc::new(SolidColor::new(emit)),
         }
     }
-    pub fn newArc(emit: Arc<dyn Texture>) -> Self {
+    pub fn newarc(emit: Arc<dyn Texture>) -> Self {
         Self { emit }
     }
 }

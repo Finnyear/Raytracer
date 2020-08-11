@@ -23,7 +23,15 @@ impl Vec3 {
             0 => self.x,
             1 => self.y,
             2 => self.z,
-            _ => 0.0,
+            _ => unreachable!(),
+        }
+    }
+    pub fn get_mut(&mut self, x: i32) -> &mut f64 {
+        match x {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 => &mut self.z,
+            _ => unreachable!(),
         }
     }
     pub fn new(x: f64, y: f64, z: f64) -> Self {
