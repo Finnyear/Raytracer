@@ -20,6 +20,7 @@ pub trait Material {
 pub struct Lambertian {
     albedo: Arc<dyn Texture>,
 }
+#[allow(dead_code)]
 impl Lambertian {
     pub fn new(albedo: Vec3) -> Self {
         Self {
@@ -139,6 +140,7 @@ impl Material for Dielectric {
 pub struct DiffuseLight {
     emit: Arc<dyn Texture>,
 }
+#[allow(dead_code)]
 impl DiffuseLight {
     pub fn new(emit: Vec3) -> Self {
         Self {

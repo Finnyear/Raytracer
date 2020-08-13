@@ -24,6 +24,7 @@ pub struct CheckerTexture {
     pub odd: Arc<dyn Texture>,
     pub even: Arc<dyn Texture>,
 }
+#[allow(dead_code)]
 impl CheckerTexture {
     pub fn new(odd: Vec3, even: Vec3) -> Self {
         Self {

@@ -203,29 +203,10 @@ pub fn cornellbox() -> HittableList {
     let green = Arc::new(Lambertian::new(Vec3::new(0.12, 0.45, 0.15)));
     let light = Arc::new(DiffuseLight::new(Vec3::new(15.0, 15.0, 15.0)));
 
-    objects.add(Arc::new(YzRect::new(
-        0.0,
-        555.0,
-        0.0,
-        555.0,
-        555.0,
-        green.clone(),
-    )));
-    objects.add(Arc::new(YzRect::new(
-        0.0,
-        555.0,
-        0.0,
-        555.0,
-        0.0,
-        red.clone(),
-    )));
+    objects.add(Arc::new(YzRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green)));
+    objects.add(Arc::new(YzRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red)));
     objects.add(Arc::new(FlipFace::new(Arc::new(XzRect::new(
-        213.0,
-        343.0,
-        227.0,
-        332.0,
-        554.0,
-        light.clone(),
+        213.0, 343.0, 227.0, 332.0, 554.0, light,
     )))));
     objects.add(Arc::new(XzRect::new(
         0.0,
@@ -273,7 +254,7 @@ pub fn cornellbox() -> HittableList {
     let box2 = Arc::new(Bbox::new(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(165.0, 165.0, 165.0),
-        white.clone(),
+        white,
     ));
     let box2 = Arc::new(Rotatey::new(box2, -18.0));
     let box2 = Arc::new(Translate::new(box2, Vec3::new(130.0, 0.0, 65.0)));

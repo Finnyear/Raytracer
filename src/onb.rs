@@ -3,6 +3,7 @@ use crate::vec3::Vec3;
 pub struct ONB {
     pub axis: [Vec3; 3],
 }
+#[allow(dead_code)]
 impl ONB {
     pub fn buildw(n: Vec3) -> Self {
         let axis2 = n.unit();

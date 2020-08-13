@@ -17,6 +17,7 @@ pub struct Camera {
     pub time0: f64,
     pub time1: f64,
 }
+#[allow(clippy::too_many_arguments)]
 impl Camera {
     pub fn new(
         lookfrom: Vec3,

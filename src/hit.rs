@@ -48,6 +48,7 @@ pub struct Sphere {
     pub radius: f64,
     pub mat_ptr: Arc<dyn Material>,
 }
+#[allow(dead_code)]
 impl Sphere {
     pub fn new(center: Vec3, radius: f64, mat_ptr: Arc<dyn Material>) -> Self {
         Self {
@@ -113,6 +114,7 @@ pub struct MovingSphere {
     pub radius: f64,
     pub mat_ptr: Arc<dyn Material>,
 }
+#[allow(dead_code)]
 impl MovingSphere {
     pub fn new(
         center0: Vec3,
@@ -267,6 +269,7 @@ impl Hittable for BvhNode {
         Some(self.mybox.clone())
     }
 }
+#[allow(dead_code)]
 impl BvhNode {
     pub fn new(mut objects: Vec<Arc<dyn Hittable>>, span: usize, time0: f64, time1: f64) -> Self {
         let axis = random_int(0, 2);
@@ -598,7 +601,7 @@ impl Rotatey {
         let sintheta = radian.sin();
         let costheta = radian.cos();
         let mybox = ptr.bounding_box(0.0, 1.0);
-        if let Option::None = mybox {
+        if mybox.is_none() {
             return Self {
                 ptr,
                 sintheta,
