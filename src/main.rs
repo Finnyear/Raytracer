@@ -47,15 +47,15 @@ fn get_color(this_ray: &Ray, background: Vec3, world: &HittableList, depth: i32)
     }
     if let Option::Some(rec) = world.hit(this_ray, 0.001, INF) {
         let emitted = rec.mat_ptr.emitted(&rec, rec.u, rec.v, rec.p);
-        if let Option::Some((albedo, scattered, pdf)) = rec.mat_ptr.scatter(this_ray, &rec) {
+        if let Option::Some((albedo, _scattered, _pdf)) = rec.mat_ptr.scatter(this_ray, &rec) {
             let on_light = Vec3::new(get_rand(213.0, 343.0), 554.0, get_rand(227.0, 332.0));
             let to_light = on_light - rec.p;
-            let dis_squared = to_light.squared_length();
+            let _dis_squared = to_light.squared_length();
             let to_light = to_light.unit();
             if to_light * rec.nor < 0.0 {
                 return emitted;
             }
-            let light_area = (343.0 - 213.0) * (332.0 - 227.0);
+            let _light_area = (343.0 - 213.0) * (332.0 - 227.0);
             let light_cos = to_light.y.abs();
             if light_cos < 0.000001 {
                 return emitted;
@@ -286,20 +286,20 @@ fn main() {
     let x = Vec3::new(1.0, 1.0, 1.0);
     println!("{:?}", x);
 
-    let mut aspect_ratio: f64 = 2.0 / 1.0;
-    let mut image_height: u32 = 512;
-    let mut sam_num: i32 = 10;
-    let mut max_dep: i32 = 50;
+    let aspect_ratio: f64 = 1.0;
+    let image_height: u32 = 600;
+    let sam_num: i32 = 200;
+    let max_dep: i32 = 50;
 
     let vup = Vec3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
 
-    let mut world = HittableList::default();
-    let mut lookfrom: Vec3;
-    let mut lookat: Vec3;
-    let mut vfov = 40.0;
-    let mut aperture = 0.0;
-    let mut background = Vec3::zero();
+    let world = cornellbox();
+    let lookfrom = Vec3::new(278.0, 278.0, -800.0);
+    let lookat = Vec3::new(278.0, 278.0, 0.0);
+    let vfov = 40.0;
+    let aperture = 0.0;
+    let background = Vec3::zero();
 
     // {
     //     //Case 1:
@@ -329,14 +329,14 @@ fn main() {
     // }
     {
         //Case 6:
-        world = cornellbox();
-        aspect_ratio = 1.0;
-        image_height = 600;
-        sam_num = 200;
-        background = Vec3::zero();
-        lookfrom = Vec3::new(278.0, 278.0, -800.0);
-        lookat = Vec3::new(278.0, 278.0, 0.0);
-        vfov = 40.0;
+        // world = cornellbox();
+        // aspect_ratio = 1.0;
+        // image_height = 600;
+        // sam_num = 200;
+        // background = Vec3::zero();
+        // lookfrom = Vec3::new(278.0, 278.0, -800.0);
+        // lookat = Vec3::new(278.0, 278.0, 0.0);
+        // vfov = 40.0;
     }
     let cam: Camera = Camera::new(
         lookfrom,
@@ -350,7 +350,7 @@ fn main() {
         1.0,
     );
 
-    let mut image_width: u32 = ((image_height as f64) * aspect_ratio) as u32;
+    let image_width: u32 = ((image_height as f64) * aspect_ratio) as u32;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
     let bar = ProgressBar::new(image_width as u64);
     // reflect(Vec3::ones(), Vec3::ones());

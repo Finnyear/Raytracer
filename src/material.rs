@@ -6,13 +6,13 @@ use crate::texture::*;
 use crate::vec3::*;
 use std::sync::Arc;
 pub trait Material {
-    fn scatter(&self, this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray, f64)> {
+    fn scatter(&self, _this_ray: &Ray, _rec: &HitRecord) -> Option<(Vec3, Ray, f64)> {
         Option::None
     }
-    fn scattering_pdf(&self, this_ray: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
+    fn scattering_pdf(&self, _this_ray: &Ray, _rec: &HitRecord, _scattered: &Ray) -> f64 {
         0.0
     }
-    fn emitted(&self, rec: &HitRecord, u: f64, v: f64, p: Vec3) -> Vec3 {
+    fn emitted(&self, _rec: &HitRecord, _u: f64, _v: f64, _p: Vec3) -> Vec3 {
         Vec3::zero()
     }
 }
@@ -43,7 +43,7 @@ impl Material for Lambertian {
         let pdf = (uvw.w() * scattered.dir) / PI;
         Option::Some((atten_col, scattered, pdf))
     }
-    fn scattering_pdf(&self, this_ray: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
+    fn scattering_pdf(&self, _this_ray: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
         let cosine = rec.nor * scattered.dir.unit();
         if cosine < 0.0 {
             0.0

@@ -10,7 +10,7 @@ impl Aabb {
     pub fn new(mn: Vec3, mx: Vec3) -> Self {
         Self { mn, mx }
     }
-    pub fn hit(&self, this_ray: Ray, tmin: f64, tmax: f64) -> bool {
+    pub fn hit(&self, this_ray: Ray, mut tmin: f64, mut tmax: f64) -> bool {
         for i in 0..3 {
             let inv = 1.0 / this_ray.dir.get(i);
             let mut t0 = (self.mn.get(i) - this_ray.ori.get(i)) * inv;
@@ -19,10 +19,10 @@ impl Aabb {
                 std::mem::swap(&mut t0, &mut t1);
             }
             if t0 > tmin {
-                let tmin = t0;
+                tmin = t0;
             }
             if t1 < tmax {
-                let tmax = t1;
+                tmax = t1;
             }
             if tmax <= tmin {
                 return false;

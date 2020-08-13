@@ -30,10 +30,10 @@ impl HitRecord {
 pub trait Hittable {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord>;
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb>;
-    fn pdf_value(&self, o: Vec3, v: Vec3) -> f64 {
+    fn pdf_value(&self, _o: Vec3, _v: Vec3) -> f64 {
         0.0
     }
-    fn random(&self, o: Vec3) -> Vec3 {
+    fn random(&self, _o: Vec3) -> Vec3 {
         Vec3::new(1.0, 0.0, 0.0)
     }
 }
@@ -98,7 +98,7 @@ impl Hittable for Sphere {
         }
         Option::None
     }
-    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<Aabb> {
         Some(Aabb {
             mn: self.center - Vec3::new(self.radius, self.radius, self.radius),
             mx: self.center + Vec3::new(self.radius, self.radius, self.radius),
@@ -263,7 +263,7 @@ impl Hittable for BvhNode {
             }
         }
     }
-    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<Aabb> {
         Some(self.mybox.clone())
     }
 }
@@ -345,7 +345,7 @@ impl Hittable for XyRect {
         rec.set_face_normal(this_ray, outward_normal);
         Option::Some(rec)
     }
-    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<Aabb> {
         Some(Aabb::new(
             Vec3::new(self.x0, self.y0, self.k - 0.001),
             Vec3::new(self.x1, self.y1, self.k + 0.001),
@@ -399,7 +399,7 @@ impl Hittable for XzRect {
         rec.set_face_normal(this_ray, outward_normal);
         Option::Some(rec)
     }
-    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<Aabb> {
         Some(Aabb::new(
             Vec3::new(self.x0, self.z0, self.k - 0.001),
             Vec3::new(self.x1, self.z1, self.k + 0.001),
@@ -471,7 +471,7 @@ impl Hittable for YzRect {
         rec.set_face_normal(this_ray, outward_normal);
         Option::Some(rec)
     }
-    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<Aabb> {
         Some(Aabb::new(
             Vec3::new(self.y0, self.z0, self.k - 0.001),
             Vec3::new(self.y1, self.z1, self.k + 0.001),
@@ -548,7 +548,7 @@ impl Hittable for Bbox {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
         self.sides.hit(this_ray, tmn, tmx)
     }
-    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<Aabb> {
         Some(Aabb::new(self.boxmn, self.boxmx))
     }
 }
@@ -667,7 +667,7 @@ impl Hittable for Rotatey {
             Option::None
         }
     }
-    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+    fn bounding_box(&self, _t0: f64, _t1: f64) -> Option<Aabb> {
         self.mybox.clone()
     }
 }
