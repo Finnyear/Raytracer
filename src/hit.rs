@@ -647,3 +647,25 @@ impl Hittable for Rotatey {
         self.mybox.clone()
     }
 }
+
+pub struct FlipFace {
+    ptr: Arc<dyn Hittable>,
+}
+impl FlipFace {
+    pub fn new(ptr: Arc<dyn Hittable>) -> Self {
+        Self { ptr }
+    }
+}
+impl Hittable for FlipFace {
+    fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord> {
+        if let Option::Some(mut rec) = self.ptr.hit(this_ray, tmn, tmx) {
+            rec.nor_dir = !rec.nor_dir;
+            Option::Some(rec)
+        } else {
+            Option::None
+        }
+    }
+    fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb> {
+        self.ptr.bounding_box(t0, t1)
+    }
+}

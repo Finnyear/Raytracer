@@ -1,12 +1,18 @@
 use crate::hit::HitRecord;
+use crate::onb::ONB;
 use crate::random::*;
 use crate::ray::Ray;
 use crate::texture::*;
 use crate::vec3::*;
 use std::sync::Arc;
 pub trait Material {
-    fn scatter(&self, this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray)>;
-    fn emitted(&self, u: f64, v: f64, p: Vec3) -> Vec3 {
+    fn scatter(&self, this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray, f64)> {
+        Option::None
+    }
+    fn scattering_pdf(&self, this_ray: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
+        0.0
+    }
+    fn emitted(&self, rec: &HitRecord, u: f64, v: f64, p: Vec3) -> Vec3 {
         Vec3::zero()
     }
 }
@@ -25,17 +31,29 @@ impl Lambertian {
     }
 }
 impl Material for Lambertian {
-    fn scatter(&self, _this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray)> {
-        let sca_dir = rec.nor + random_unit_vector();
+    fn scatter(&self, this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray, f64)> {
+        let uvw = ONB::buildw(rec.nor);
+        let sca_dir = uvw.change(random_cosine_direction());
         let scattered = Ray {
             ori: rec.p,
-            dir: sca_dir,
-            tm: _this_ray.tm,
+            dir: sca_dir.unit(),
+            tm: this_ray.tm,
         };
         let atten_col = self.albedo.value(rec.u, rec.v, rec.p);
-        Option::Some((atten_col, scattered))
+        let pdf = (uvw.w() * scattered.dir) / PI;
+        Option::Some((atten_col, scattered, pdf))
+    }
+    fn scattering_pdf(&self, this_ray: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
+        let cosine = rec.nor * scattered.dir.unit();
+        if cosine < 0.0 {
+            0.0
+        } else {
+            cosine / PI
+        }
+        //0.5 / PI
     }
 }
+/*
 pub struct Metal {
     albedo: Vec3,
     fuzz: f64,
@@ -117,7 +135,7 @@ impl Material for Dielectric {
         Option::Some((atten_col, scattered))
     }
 }
-
+*/
 pub struct DiffuseLight {
     emit: Arc<dyn Texture>,
 }
@@ -132,10 +150,14 @@ impl DiffuseLight {
     }
 }
 impl Material for DiffuseLight {
-    fn scatter(&self, _this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray)> {
+    /*fn scatter(&self, _this_ray: &Ray, rec: &HitRecord) -> Option<(Vec3, Ray)> {
         Option::None
-    }
-    fn emitted(&self, u: f64, v: f64, p: Vec3) -> Vec3 {
-        self.emit.value(u, v, p)
+    }*/
+    fn emitted(&self, rec: &HitRecord, u: f64, v: f64, p: Vec3) -> Vec3 {
+        if rec.nor_dir {
+            self.emit.value(u, v, p)
+        } else {
+            Vec3::zero()
+        }
     }
 }
