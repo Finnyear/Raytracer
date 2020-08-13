@@ -22,6 +22,8 @@ mod texture;
 use texture::*;
 mod aabb;
 mod onb;
+mod pdf;
+use pdf::*;
 
 // fn get_color(this_ray: &Ray, world: &HittableList, depth: i32) -> Vec3 {
 //     if depth <= 0 {
@@ -58,8 +60,19 @@ fn get_color(this_ray: &Ray, background: Vec3, world: &HittableList, depth: i32)
             if light_cos < 0.000001 {
                 return emitted;
             }
-            let pdf = dis_squared / (light_cos * light_area);
-            let scattered = Ray::new(rec.p, to_light, this_ray.tm);
+            let light_shape = Arc::new(XzRect::new(
+                213.0,
+                343.0,
+                227.0,
+                332.0,
+                554.0,
+                Arc::new(DiffuseLight::new(Vec3::new(15.0, 15.0, 15.0))),
+            ));
+            let p0 = Arc::new(HittablePDF::new(light_shape, rec.p));
+            let p1 = Arc::new(CosPDF::new(rec.nor));
+            let p = MixturePDF::new(p0, p1);
+            let scattered = Ray::new(rec.p, p.generate(), this_ray.tm);
+            let pdf = p.value(scattered.dir);
             return emitted
                 + get_color(&scattered, background, world, depth - 1).change(albedo)
                     * rec.mat_ptr.scattering_pdf(this_ray, &rec, &scattered)
@@ -319,7 +332,7 @@ fn main() {
         world = cornellbox();
         aspect_ratio = 1.0;
         image_height = 600;
-        sam_num = 10;
+        sam_num = 200;
         background = Vec3::zero();
         lookfrom = Vec3::new(278.0, 278.0, -800.0);
         lookat = Vec3::new(278.0, 278.0, 0.0);

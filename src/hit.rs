@@ -30,6 +30,12 @@ impl HitRecord {
 pub trait Hittable {
     fn hit(&self, this_ray: &Ray, tmn: f64, tmx: f64) -> Option<HitRecord>;
     fn bounding_box(&self, t0: f64, t1: f64) -> Option<Aabb>;
+    fn pdf_value(&self, o: Vec3, v: Vec3) -> f64 {
+        0.0
+    }
+    fn random(&self, o: Vec3) -> Vec3 {
+        Vec3::new(1.0, 0.0, 0.0)
+    }
 }
 pub fn get_sphere_uv(p: Vec3, u: &mut f64, v: &mut f64) {
     let phi = p.z.atan2(p.x);
@@ -398,6 +404,24 @@ impl Hittable for XzRect {
             Vec3::new(self.x0, self.z0, self.k - 0.001),
             Vec3::new(self.x1, self.z1, self.k + 0.001),
         ))
+    }
+    fn pdf_value(&self, o: Vec3, v: Vec3) -> f64 {
+        if let Option::Some(rec) = self.hit(&Ray::new(o, v, 0.0), 0.001, INF) {
+            let area = (self.x1 - self.x0) * (self.z1 - self.z0);
+            let dis_squared = rec.t * rec.t * v.squared_length();
+            let cos = ((v * rec.nor) / v.length()).abs();
+            dis_squared / (cos * area)
+        } else {
+            0.0
+        }
+    }
+    fn random(&self, o: Vec3) -> Vec3 {
+        let random_point = Vec3::new(
+            get_rand(self.x0, self.x1),
+            self.k,
+            get_rand(self.z0, self.z1),
+        );
+        random_point - o
     }
 }
 
