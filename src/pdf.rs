@@ -70,3 +70,13 @@ impl PDF for MixturePDF {
         }
     }
 }
+
+pub struct NOPDF {}
+impl PDF for NOPDF {
+    fn value(&self, _direction: Vec3) -> f64 {
+        unreachable!()
+    }
+    fn generate(&self) -> Vec3 {
+        unreachable!()
+    }
+}

@@ -1,6 +1,7 @@
 use crate::aabb::*;
 use crate::camera::degrees_to_radians;
 use crate::material::Material;
+use crate::onb::ONB;
 use crate::random::*;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
@@ -104,6 +105,22 @@ impl Hittable for Sphere {
             mn: self.center - Vec3::new(self.radius, self.radius, self.radius),
             mx: self.center + Vec3::new(self.radius, self.radius, self.radius),
         })
+    }
+    fn pdf_value(&self, o: Vec3, v: Vec3) -> f64 {
+        if let Option::Some(_rec) = self.hit(&Ray::new(o, v, 0.0), 0.001, INF) {
+            let costheta_max =
+                (1.0 - self.radius * self.radius / (self.center - o).squared_length()).sqrt();
+            let solid_angle = 2.0 * PI * (1.0 - costheta_max);
+            1.0 / solid_angle
+        } else {
+            0.0
+        }
+    }
+    fn random(&self, o: Vec3) -> Vec3 {
+        let dir = self.center - o;
+        let dis_squared = dir.squared_length();
+        let uvw = ONB::buildw(dir);
+        uvw.change(random_to_sphere(self.radius, dis_squared))
     }
 }
 pub struct MovingSphere {
@@ -234,6 +251,17 @@ impl Hittable for HittableList {
             }
         }
         Some(output_box)
+    }
+    fn pdf_value(&self, o: Vec3, v: Vec3) -> f64 {
+        let weight = 1.0 / self.objects.len() as f64;
+        let mut sum = 0.0;
+        for object in self.objects.iter() {
+            sum += weight * object.pdf_value(o, v);
+        }
+        sum
+    }
+    fn random(&self, o: Vec3) -> Vec3 {
+        self.objects[random_int(0, self.objects.len() as i32 - 1) as usize].random(o)
     }
 }
 
